@@ -7,6 +7,5 @@ import androidx.compose.ui.graphics.Path
 
 
 object DrawingStore {
-//    val drawings = mutableStateMapOf<String, List<Pair<Path, DrawConfig>>>()
     val drawings = mutableStateMapOf<String, List<Pair<List<Offset>, DrawConfig>>>()
 }
