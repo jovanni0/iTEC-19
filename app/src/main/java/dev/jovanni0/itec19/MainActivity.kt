@@ -41,7 +41,10 @@ import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.lifecycleScope
 import com.google.ar.core.Pose
+import dev.jovanni0.itec19.server_connection.DrawingWebSocketClient
+import kotlinx.coroutines.launch
 import kotlin.jvm.java
 
 class MainActivity : ComponentActivity()
@@ -55,9 +58,48 @@ class MainActivity : ComponentActivity()
         canShowAR = isGranted
     }
 
+    private var wsClient: DrawingWebSocketClient? = null
+    private var currentPosterId: String? = null
+
+//    private val deviceId = getSharedPreferences("prefs", MODE_PRIVATE)
+//        .getString("device_id", null)
+//        ?: UUID.randomUUID().toString().also {
+//            getSharedPreferences("prefs", MODE_PRIVATE).edit().putString("device_id", it).apply()
+//        }
+
+    private val deviceId = "device1"
+
+    private fun switchToPoster(posterId: String) {
+        if (currentPosterId == posterId) return  // already connected to this poster
+
+        // Close previous connection
+        lifecycleScope.launch {
+            wsClient?.close()
+
+            // Open new connection
+            currentPosterId = posterId
+            wsClient = DrawingWebSocketClient(
+                posterId = posterId,
+                deviceId = deviceId,
+                serverIp = "10.209.127.241"
+            )
+            wsClient?.connect()
+        }
+    }
+
+//    private val wsClient = DrawingWebSocketClient(
+//        posterId = "poster1",
+//        deviceId = UUID.randomUUID().toString(),
+//        serverIp = "10.209.127.241"
+//    )
+
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
+
+//        lifecycleScope.launch {
+//            wsClient?.connect()
+//        }
 
         // Check if permission is already there
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
@@ -75,6 +117,15 @@ class MainActivity : ComponentActivity()
             } else {
                 Box(Modifier.fillMaxSize()) { Text("Waiting for Camera...") }
             }
+        }
+    }
+
+    override fun onDestroy()
+    {
+        super.onDestroy()
+
+        lifecycleScope.launch {
+            wsClient?.close()
         }
     }
 
@@ -112,6 +163,7 @@ class MainActivity : ComponentActivity()
 
                     if (visiblePoster != null) {
                         statusMessage = "Found ${visiblePoster.name}"
+                        switchToPoster(visiblePoster.name)
 
                         try {
                             val camera = frame.camera
@@ -163,42 +215,7 @@ class MainActivity : ComponentActivity()
 
             Box(modifier = Modifier.fillMaxSize().onSizeChanged { canvasSize = it })
 
-            // Draw the quad overlay over the poster corners
             if (cornerPoints.size == 4) {
-//                Canvas(
-//                    modifier = Modifier
-//                        .fillMaxSize()
-//                        .pointerInput(cornerPoints) {
-//                            detectTapGestures { tapOffset ->
-//                                android.util.Log.d("AR_TAP", "Tapped at $tapOffset")
-//                                android.util.Log.d("AR_TAP", "Corner points: $cornerPoints")
-//
-//                                if (cornerPoints.size == 4) {
-//                                    val inside = isPointInQuad(tapOffset, cornerPoints)
-//                                    android.util.Log.d("AR_TAP", "Inside quad: $inside")
-//                                    if (inside) {
-//                                        val posterName = trackedImage?.name ?: return@detectTapGestures
-//                                        val intent = Intent(context, PosterDetailActivity::class.java).apply {
-//                                            putExtra("poster_name", posterName)
-//                                        }
-//                                        context.startActivity(intent)
-//                                    }
-//                                } else {
-//                                    android.util.Log.d("AR_TAP", "Not enough corner points: ${cornerPoints.size}")
-//                                }
-//                            }
-//                        }
-//                ) {
-//                    val path = Path().apply {
-//                        moveTo(cornerPoints[0].x, cornerPoints[0].y)
-//                        lineTo(cornerPoints[1].x, cornerPoints[1].y)
-//                        lineTo(cornerPoints[2].x, cornerPoints[2].y)
-//                        lineTo(cornerPoints[3].x, cornerPoints[3].y)
-//                        close()
-//                    }
-//                    drawPath(path, color = Color(0x440000FF))          // semi-transparent fill
-//                    drawPath(path, color = Color(0xFF00E5FF), style = Stroke(width = 4f))  // border
-//                }
                 Canvas(
                     modifier = Modifier
                         .fillMaxSize()
@@ -265,7 +282,15 @@ class MainActivity : ComponentActivity()
         val db = AugmentedImageDatabase(session)
         val posters = listOf(
             "afis1.png" to 0.21f,
-            "afis2.png" to 0.21f
+            "afis2.png" to 0.21f,
+//            "afis3.png" to 0.21f,
+//            "afis4.png" to 0.21f,
+//            "afis5.png" to 0.21f,
+//            "afis6.png" to 0.21f,
+//            "afis7.png" to 0.21f,
+//            "afis8.png" to 0.21f,
+//            "afis9.png" to 0.21f,
+//            "afis10.png" to 0.21f
         )
 
         posters.forEach { (name, width) ->
