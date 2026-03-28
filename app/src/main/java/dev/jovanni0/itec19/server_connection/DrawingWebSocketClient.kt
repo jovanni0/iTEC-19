@@ -47,7 +47,7 @@ class DrawingWebSocketClient(
     private var session: ClientWebSocketSession? = null
 
 
-    suspend fun connect()
+    suspend fun connect(): Boolean
     {
         try {
             client.webSocket("ws://$serverIp:8080/draw/$posterId") {
@@ -64,7 +64,11 @@ class DrawingWebSocketClient(
         catch (e: Exception)
         {
             Log.d("State", "Error trying to connect to server on IP $serverIp")
+
+            return false
         }
+
+        return true
     }
 
 

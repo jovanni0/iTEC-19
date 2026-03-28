@@ -11,6 +11,7 @@ object WebSocketManager
 {
     private var client: DrawingWebSocketClient? = null
     private var currentPosterId: String? = null
+    private var isConnected: Boolean = false
 
 
     fun connect(posterId: String, deviceId: String, serverIp: String, scope: CoroutineScope)
@@ -21,7 +22,8 @@ object WebSocketManager
             client?.close()
             currentPosterId = posterId
             client = DrawingWebSocketClient(posterId, deviceId, serverIp)
-            client?.connect()
+
+            isConnected = client?.connect() == true
 
             Log.d("State", "WebSocketManager connected to room $currentPosterId")
         }
@@ -30,6 +32,11 @@ object WebSocketManager
 
     fun sendStroke(stroke: StrokePayload, scope: CoroutineScope)
     {
+        if (!isConnected) {
+            Log.d("State", "Could not send stroke because not connected to server.")
+            return
+        }
+
         scope.launch {
             client?.sendStroke(stroke)
         }
