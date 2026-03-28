@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import dev.jovanni0.itec19.screen.ArScreen
+import dev.jovanni0.itec19.screen.FloorplanScreen
 import dev.jovanni0.itec19.screen.MapScreen
 import dev.jovanni0.itec19.screen.TeamPeakScreen
 import dev.jovanni0.itec19.stores.AppStore
@@ -81,6 +82,12 @@ class MainActivity : ComponentActivity() {
                                 icon = { Icon(Icons.Default.Person, contentDescription = "Team") },
                                 label = { Text("Team") }
                             )
+                            NavigationBarItem(
+                                selected = selectedTab == 3,
+                                onClick = { selectedTab = 3 },
+                                icon = { Icon(Icons.Default.Person, contentDescription = "Floorplan") },
+                                label = { Text("Floorplan") }
+                            )
                         }
                     }
                 }
@@ -115,6 +122,15 @@ class MainActivity : ComponentActivity() {
                             AppStore.team = it
                             selectedTab = 0
                         })
+                    }
+
+                    if (selectedTab == 3)
+                    {
+                        FloorplanScreen(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.White)
+                        )
                     }
                 }
             }
