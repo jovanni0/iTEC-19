@@ -238,9 +238,8 @@ class MainActivity : ComponentActivity()
 
                             android.util.Log.d("AR_DRAW", "quadOrigin=$quadOrigin, quadRight=$quadRight, quadDown=$quadDown")
 
-                            posterDrawings.forEach { (drawingPath, config) ->
-                                val mappedPath = mapPathToQuad(drawingPath, quadOrigin, quadRight, quadDown)
-                                android.util.Log.d("AR_DRAW", "Drawing path bounds: ${mappedPath.getBounds()}")
+                            posterDrawings.forEach { (points, config) ->
+                                val mappedPath = mapNormalizedStrokeToQuad(points, quadOrigin, quadRight, quadDown)
                                 drawPath(
                                     path = mappedPath,
                                     color = config.color,
@@ -318,4 +317,20 @@ fun mapPathToQuad(
     val androidPath = android.graphics.Path(path.asAndroidPath()) // copy, not reference
     androidPath.transform(matrix)
     return Path().apply { addPath(androidPath.asComposePath()) }
+}
+
+fun mapNormalizedStrokeToQuad(
+    points: List<Offset>,
+    origin: Offset,
+    right: Offset,
+    down: Offset
+): Path {
+    return Path().apply {
+        points.forEachIndexed { index, point ->
+            // Bilinear mapping from [0,1] to quad
+            val mapped = origin + right * point.x + down * point.y
+            if (index == 0) moveTo(mapped.x, mapped.y)
+            else lineTo(mapped.x, mapped.y)
+        }
+    }
 }

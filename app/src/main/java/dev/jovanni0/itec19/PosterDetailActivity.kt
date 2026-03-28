@@ -44,6 +44,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
 import androidx.compose.ui.graphics.StrokeCap
@@ -51,6 +53,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 
 
@@ -85,10 +88,12 @@ fun PosterDetailScreen(
         mutableStateOf(DrawingStore.drawings[posterName] ?: emptyList())
     }
     var currentPath by remember { mutableStateOf<Path?>(null) }
+    var rawPoints by remember { mutableStateOf(listOf<Offset>()) }
     var selectedColor by remember { mutableStateOf(Color.Red) }
     var strokeWidth by remember { mutableStateOf(8f) }
     var isEraser by remember { mutableStateOf(false) }
     val bitmap = remember(posterName) { posterBitmap }
+    var canvasSize by remember { mutableStateOf(Size.Zero) }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -142,21 +147,45 @@ fun PosterDetailScreen(
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
+                    .onSizeChanged { canvasSize = Size(it.width.toFloat(), it.height.toFloat()) }
                     .graphicsLayer(alpha = 0.99f)
                     .pointerInput(isEraser, selectedColor, strokeWidth) {
                         detectDragGestures(
                             onDragStart = { offset ->
                                 currentPath = Path().apply { moveTo(offset.x, offset.y) }
+                                rawPoints = listOf(offset)
                             },
                             onDrag = { change, _ ->
-                                currentPath = currentPath?.apply {
-                                    lineTo(change.position.x, change.position.y)
-                                }
+                                currentPath = currentPath?.apply { lineTo(change.position.x, change.position.y) }
+                                rawPoints = rawPoints + change.position
                             },
+//                            onDragStart = { offset ->
+//                                currentPath = Path().apply { moveTo(offset.x, offset.y) }
+//                            },
+//                            onDrag = { change, _ ->
+//                                currentPath = currentPath?.apply {
+//                                    lineTo(change.position.x, change.position.y)
+//                                }
+//                            },
+//                            onDragEnd = {
+//                                currentPath?.let { path ->
+//                                    paths = paths + Pair(
+//                                        path,
+//                                        DrawConfig(
+//                                            color = if (isEraser) Color.Transparent else selectedColor,
+//                                            strokeWidth = strokeWidth,
+//                                            blendMode = if (isEraser) BlendMode.Clear else BlendMode.SrcOver
+//                                        )
+//                                    )
+//                                    DrawingStore.drawings[posterName] = paths
+//                                }
+//                                currentPath = null
+//                            }
                             onDragEnd = {
-                                currentPath?.let { path ->
+                                currentPath?.let {
+                                    val normalizedPoints = rawPoints.map { it.normalize(canvasSize) }
                                     paths = paths + Pair(
-                                        path,
+                                        normalizedPoints,
                                         DrawConfig(
                                             color = if (isEraser) Color.Transparent else selectedColor,
                                             strokeWidth = strokeWidth,
@@ -166,12 +195,30 @@ fun PosterDetailScreen(
                                     DrawingStore.drawings[posterName] = paths
                                 }
                                 currentPath = null
+                                rawPoints = emptyList()
                             }
                         )
                     }
             ) {
                 // Draw all completed paths
-                paths.forEach { (path, config) ->
+//                paths.forEach { (path, config) ->
+//                    drawPath(
+//                        path = path,
+//                        color = config.color,
+//                        style = Stroke(
+//                            width = config.strokeWidth,
+//                            cap = StrokeCap.Round,
+//                            join = StrokeJoin.Round
+//                        ),
+//                        blendMode = config.blendMode
+//                    )
+//                }
+                paths.forEach { (points, config) ->
+                    val path = Path().apply {
+                        points.map { it.denormalize(size) }.forEachIndexed { i, offset ->
+                            if (i == 0) moveTo(offset.x, offset.y) else lineTo(offset.x, offset.y)
+                        }
+                    }
                     drawPath(
                         path = path,
                         color = config.color,
