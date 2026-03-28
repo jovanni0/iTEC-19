@@ -10,6 +10,7 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
@@ -82,6 +83,21 @@ fun FloorplanScreen(modifier: Modifier = Modifier)
                 )
             }
     ) {
+        val imageAspect = mapBitmap.width.toFloat() / mapBitmap.height
+        val boxAspect = if (imageSize != IntSize.Zero) imageSize.width.toFloat() / imageSize.height else imageAspect
+
+        val (renderedW, renderedH, offsetX, offsetY) = if (imageSize != IntSize.Zero) {
+            if (imageAspect > boxAspect) {
+                val w = imageSize.width.toFloat()
+                val h = w / imageAspect
+                listOf(w, h, 0f, (imageSize.height - h) / 2f)
+            } else {
+                val h = imageSize.height.toFloat()
+                val w = h * imageAspect
+                listOf(w, h, (imageSize.width - w) / 2f, 0f)
+            }
+        } else listOf(0f, 0f, 0f, 0f)
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -101,22 +117,8 @@ fun FloorplanScreen(modifier: Modifier = Modifier)
                     .onSizeChanged { imageSize = it }
             )
 
-            if (imageSize != IntSize.Zero) {
-                val imageAspect = mapBitmap.width.toFloat() / mapBitmap.height
-                val boxAspect = imageSize.width.toFloat() / imageSize.height
-
-                val (renderedW, renderedH, offsetX, offsetY) = if (imageAspect > boxAspect) {
-                    val w = imageSize.width.toFloat()
-                    val h = w / imageAspect
-                    val oy = (imageSize.height - h) / 2f
-                    listOf(w, h, 0f, oy)
-                } else {
-                    val h = imageSize.height.toFloat()
-                    val w = h * imageAspect
-                    val ox = (imageSize.width - w) / 2f
-                    listOf(w, h, ox, 0f)
-                }
-
+            if (imageSize != IntSize.Zero)
+            {
                 posterMarkers.forEach { marker ->
                     val dominantTeam = DrawingStore.dominance[marker.posterId]
                     val markerColor = dominantTeam?.color ?: Color.White
@@ -141,6 +143,27 @@ fun FloorplanScreen(modifier: Modifier = Modifier)
                     }
                 }
             }
+        }
+
+        posterMarkers.forEach { marker ->
+            val centerX = imageSize.width / 2f
+            val centerY = imageSize.height / 2f
+
+            val rawX = offsetX + marker.x * renderedW
+            val rawY = offsetY + marker.y * renderedH
+
+            val x = (rawX - centerX) * scale + centerX + offset.x
+            val y = (rawY - centerY) * scale + centerY + offset.y
+
+            Text(
+                text = marker.posterId,
+                color = Color.Black,
+                fontSize = 18.sp,
+                modifier = Modifier
+                    .offset { IntOffset(x.toInt() - 20, y.toInt() + 24) }
+                    .padding(4.dp)
+                    .background(Color.White)
+            )
         }
     }
 }
