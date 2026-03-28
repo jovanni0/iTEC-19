@@ -11,7 +11,6 @@ object WebSocketManager
 {
     private var client: WebSocketClient? = null
     private var currentPosterId: String? = null
-    private var isConnected: Boolean = false
 
 
     fun connect(
@@ -31,9 +30,6 @@ object WebSocketManager
                 deviceId,
                 serverIp,
                 lastStrokeId = lastStrokeId,
-                onConnected = { isConnected = true },
-                onDisconnected = { isConnected = false },
-                onError = { isConnected = false }
             )
             client?.connect()
         }
@@ -43,7 +39,8 @@ object WebSocketManager
 
     fun sendStroke(stroke: StrokePayload, scope: CoroutineScope)
     {
-        if (!isConnected) {
+        if (client?.isConnected == null)
+        {
             Log.d("WebSocket", "Could not send stroke because not connected to server.")
             return
         }
@@ -55,19 +52,6 @@ object WebSocketManager
         Log.d("State", "Sent stroke to server in room $currentPosterId")
     }
 
-
-//    fun close(scope: CoroutineScope)
-//    {
-//        scope.launch {
-//            client?.close()
-//
-//            Log.d("State", "WebSocketManager disconnected from room $currentPosterId")
-//
-//            client = null
-//            currentPosterId = null
-//        }
-//    }
-// In WebSocketManager
     fun close()
     {
         runBlocking {

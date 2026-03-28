@@ -2,6 +2,7 @@ package dev.jovanni0.itec19
 
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import dev.jovanni0.itec19.data.Team
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -68,7 +69,8 @@ data class NormalizedOffset(val x: Float, val y: Float)
 data class DrawConfigPayload(
     val color: Int,
     val strokeWidth: Float,
-    val isEraser: Boolean
+    val isEraser: Boolean,
+    val team: Team
 )
 
 
@@ -79,3 +81,12 @@ data class DrawConfig(
     val deviceId: String,
     val strokeId: String
 )
+
+
+@Serializable
+@SerialName("DominanceEvent")
+data class DominanceEvent(
+    override val posterId: String,
+    override val deviceId: String = "server",
+    val team: String?
+) : DrawEvent()

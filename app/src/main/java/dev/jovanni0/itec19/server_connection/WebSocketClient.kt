@@ -3,12 +3,14 @@ package dev.jovanni0.itec19.server_connection
 
 import android.util.Log
 import dev.jovanni0.itec19.ClearEvent
+import dev.jovanni0.itec19.DominanceEvent
 import dev.jovanni0.itec19.DrawEvent
 import dev.jovanni0.itec19.stores.DrawingStore
 import dev.jovanni0.itec19.HistoryEvent
 import dev.jovanni0.itec19.StrokeAddedEvent
 import dev.jovanni0.itec19.StrokePayload
 import dev.jovanni0.itec19.UndoEvent
+import dev.jovanni0.itec19.stores.AppStore.team
 import dev.jovanni0.itec19.toLocalStroke
 import io.ktor.websocket.Frame
 import io.ktor.client.HttpClient
@@ -31,10 +33,7 @@ class WebSocketClient(
     private val posterId: String,
     private val deviceId: String,
     private val serverIp: String,
-    private val lastStrokeId: String,
-    private val onConnected: () -> Unit,
-    private val onDisconnected: () -> Unit,
-    private val onError: () -> Unit
+    private val lastStrokeId: String
 ) {
     private val jsonSerializer = Json {
         serializersModule = SerializersModule {
@@ -50,17 +49,18 @@ class WebSocketClient(
     private val client = HttpClient(OkHttp) { install(WebSockets) }
     private var session: ClientWebSocketSession? = null
 
+    val isConnected: Boolean
+        get() = session != null
 
     suspend fun connect()
     {
-        var disconnectedCleanly = false
+//        var disconnectedCleanly = false
 
         try {
 //            client.webSocket("ws://$serverIp:8080/draw/$posterId") {
             client.webSocket("ws://$serverIp:8080/draw/$posterId?lastStrokeId=$lastStrokeId") {
                 session = this
 
-                onConnected()
                 Log.d("State", "Connected to server on IP $serverIp:8080")
 
                 for (frame in incoming)
@@ -69,14 +69,12 @@ class WebSocketClient(
                     val drawEvent = jsonSerializer.decodeFromString<DrawEvent>(text)
                     handleDrawEvent(drawEvent)
                 }
-
-                disconnectedCleanly = true
-                onDisconnected()
+//                disconnectedCleanly = true
             }
         }
         catch (e: Exception)
         {
-            if (disconnectedCleanly) return
+//            if (disconnectedCleanly) return
             if (e is kotlinx.coroutines.CancellationException)
             {
                 Log.d("State", "Disconnected from server on IP $serverIp:8080")
@@ -84,7 +82,6 @@ class WebSocketClient(
             }
 
             Log.d("State", "Error trying to connect to server on IP $serverIp:8080, ${e.toString()}")
-            onError()
         }
     }
 
@@ -154,6 +151,12 @@ class WebSocketClient(
                 DrawingStore.drawings[posterId] = current + received_strokes
 
                 Log.d("WebSocket", "Decoded History Event: ${DrawingStore.drawings[posterId]}")
+            }
+
+            is DominanceEvent -> {
+                DrawingStore.dominance[event.posterId] = team
+
+                Log.d("WebSocket", "${event.team} is dominating on poster ${event.posterId}!")
             }
         }
     }

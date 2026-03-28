@@ -57,6 +57,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import dev.jovanni0.itec19.data.Team
 import dev.jovanni0.itec19.server_connection.WebSocketManager
 import dev.jovanni0.itec19.stores.AppStore
 import dev.jovanni0.itec19.stores.DrawingStore
@@ -111,7 +112,8 @@ class PosterDetailActivity : ComponentActivity()
             config = DrawConfigPayload(
                 color = lastStroke.second.color.toArgb(),
                 strokeWidth = lastStroke.second.strokeWidth,
-                isEraser = lastStroke.second.blendMode == BlendMode.Clear
+                isEraser = lastStroke.second.blendMode == BlendMode.Clear,
+                team = AppStore.team ?: Team.RED
             )
         )
 

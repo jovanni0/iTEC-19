@@ -1,5 +1,6 @@
 package dev.jovanni0.itec19.screen
 
+import android.R
 import android.content.Intent
 import android.content.res.AssetManager
 import android.graphics.BitmapFactory
@@ -89,18 +90,38 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
                     disconnectJob = null
 
                     // Connect only if this is a new poster
+//                    if (connectedPosterId != visiblePoster.name)
+//                    {
+//                        Log.d("WebSocket", "Triggered connection for new poster ${visiblePoster.name}")
+//
+////                        WebSocketManager.close()
+//
+//                        WebSocketManager.connect(
+//                            visiblePoster.name,
+//                            AppStore.deviceId,
+//                            AppStore.SERVER_IP,
+//                            DrawingStore.getLastStrokeId(visiblePoster.name).toString(),
+//                            scope
+//                        )
+//                        connectedPosterId = visiblePoster.name
+//                    }
+
                     if (connectedPosterId != visiblePoster.name)
                     {
                         Log.d("WebSocket", "Triggered connection for new poster ${visiblePoster.name}")
+                        val targetPoster = visiblePoster.name
+                        connectedPosterId = targetPoster
 
-                        WebSocketManager.connect(
-                            visiblePoster.name,
-                            AppStore.deviceId,
-                            AppStore.SERVER_IP,
-                            DrawingStore.getLastStrokeId(visiblePoster.name).toString(),
-                            scope
-                        )
-                        connectedPosterId = visiblePoster.name
+                        scope.launch {
+                            WebSocketManager.close()
+                            WebSocketManager.connect(
+                                targetPoster,
+                                AppStore.deviceId,
+                                AppStore.SERVER_IP,
+                                DrawingStore.getLastStrokeId(targetPoster).toString(),
+                                scope
+                            )
+                        }
                     }
 
                     statusMessage = "Found ${visiblePoster.name}"
@@ -194,8 +215,14 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
                         lineTo(cornerPoints[3].x, cornerPoints[3].y)
                         close()
                     }
-                    drawPath(path, color = Color(0x440000FF))
-                    drawPath(path, color = Color(0xFF00E5FF), style = Stroke(width = 4f))
+//                    drawPath(path, color = Color(0x440000FF))
+//                    drawPath(path, color = Color(0xFF00E5FF), style = Stroke(width = 4f))
+                    drawPath(
+                        path,
+//                        color = AppStore.team?.color ?: Color.White,
+                        color = DrawingStore.dominance[trackedImage?.name]?.color ?: Color.White,
+                        style = Stroke(width = 8f)
+                    )
 
                     val posterName = trackedImage?.name
                     val posterDrawings = DrawingStore.drawings[posterName]
@@ -224,9 +251,11 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
 
         Text(
             text = statusMessage,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(40.dp),
+            color = AppStore.team?.color ?: Color.White,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(40.dp),
             style = MaterialTheme.typography.headlineSmall,
-            color = Color.White
         )
     }
 }

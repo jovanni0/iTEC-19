@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import dev.jovanni0.itec19.screen.ArScreen
 import dev.jovanni0.itec19.screen.MapScreen
+import dev.jovanni0.itec19.screen.TeamPeakScreen
 import dev.jovanni0.itec19.stores.AppStore
 
 class MainActivity : ComponentActivity() {
@@ -58,23 +60,34 @@ class MainActivity : ComponentActivity() {
 
             Scaffold(
                 bottomBar = {
-                    NavigationBar {
-                        NavigationBarItem(
-                            selected = selectedTab == 0,
-                            onClick = { selectedTab = 0 },
-                            icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                            label = { Text("Home") }
-                        )
-                        NavigationBarItem(
-                            selected = selectedTab == 1,
-                            onClick = { selectedTab = 1 },
-                            icon = { Icon(Icons.Default.LocationOn, contentDescription = "Map") },
-                            label = { Text("Map") }
-                        )
+                    if (AppStore.team != null)
+                    {
+                        NavigationBar {
+                            NavigationBarItem(
+                                selected = selectedTab == 0,
+                                onClick = { selectedTab = 0 },
+                                icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                                label = { Text("Home") }
+                            )
+                            NavigationBarItem(
+                                selected = selectedTab == 1,
+                                onClick = { selectedTab = 1 },
+                                icon = { Icon(Icons.Default.LocationOn, contentDescription = "Map") },
+                                label = { Text("Map") }
+                            )
+                            NavigationBarItem(
+                                selected = selectedTab == 2,
+                                onClick = { selectedTab = 2 },
+                                icon = { Icon(Icons.Default.Person, contentDescription = "Team") },
+                                label = { Text("Team") }
+                            )
+                        }
                     }
                 }
             ) { innerPadding ->
-                Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                Box(
+                    modifier = Modifier.fillMaxSize().padding(innerPadding)
+                ) {
                     if (canShowAR)
                     {
                         ArScreen(
@@ -87,22 +100,21 @@ class MainActivity : ComponentActivity() {
                     }
                     else if (selectedTab == 0)
                     {
-                        Box(
-                            Modifier
-                                .fillMaxSize()
-                                .background(Color.White)
-                        ) {
+                        Box(Modifier.fillMaxSize().background(Color.White)) {
                             Text("Waiting for Camera...")
                         }
                     }
 
-                    if (selectedTab == 1)
+                    if (selectedTab == 1) {
+                        MapScreen(modifier = Modifier.fillMaxSize().background(Color.White))
+                    }
+
+                    if (selectedTab == 2 || AppStore.team == null)
                     {
-                        MapScreen(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.White)
-                        )
+                        TeamPeakScreen(onTeamSelected = {
+                            AppStore.team = it
+                            selectedTab = 0
+                        })
                     }
                 }
             }
