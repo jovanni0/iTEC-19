@@ -7,7 +7,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -15,6 +18,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,36 +41,38 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.jovanni0.itec19.data.PosterMarker
+import dev.jovanni0.itec19.server_connection.DominanceWebSocketManager
+import dev.jovanni0.itec19.server_connection.WebSocketManager
+import dev.jovanni0.itec19.stores.AppStore
 import dev.jovanni0.itec19.stores.DrawingStore
 
 
 val posterMarkers = listOf(
-//    PosterMarker("afis1", 0.31f, 0.72f),
-//    PosterMarker("afis2", 0.83f, 0.9f),
-//    PosterMarker("afis3", 0.58f, 0.97f),
-//    PosterMarker("afis4", 0.55f, 0.8f),
-//    PosterMarker("afis5", 0.32f, 0.75f),
-//    PosterMarker("afis6", 0.1f, 0.5f),
-//    PosterMarker("afis7", 0.8f, 0.7f),
-//    PosterMarker("afis8", 0.4f, 0.1f),
-//    PosterMarker("afis9", 0.9f, 0.3f),
-//    PosterMarker("afis10", 0.5f, 0.9f),
-    PosterMarker("afis1",  0.31f, 0.58f),
-    PosterMarker("afis2",  0.82f, 0.67f),
-    PosterMarker("afis3",  0.60f, 0.70f),
-    PosterMarker("afis4",  0.56f, 0.62f),
-    PosterMarker("afis5",  0.31f, 0.62f),
-    PosterMarker("afis6",  0.72f, 0.62f),
+    PosterMarker("afis1",  0.31f, 0.72f),
+    PosterMarker("afis2",  0.82f, 0.90f),
+    PosterMarker("afis3",  0.60f, 0.97f),
+    PosterMarker("afis4",  0.56f, 0.80f),
+    PosterMarker("afis5",  0.31f, 0.80f),
+    PosterMarker("afis6",  0.72f, 0.80f),
     PosterMarker("afis7",  0.15f, 0.49f),
-    PosterMarker("afis8",  0.82f, 0.59f),
-    PosterMarker("afis9",  0.66f, 0.62f),
-    PosterMarker("afis10", 0.60f, 0.64f),
+    PosterMarker("afis8",  0.82f, 0.70f),
+    PosterMarker("afis9",  0.66f, 0.80f),
+    PosterMarker("afis10", 0.60f, 0.85f),
 )
 
 
 @Composable
 fun FloorplanScreen(modifier: Modifier = Modifier)
 {
+
+    DisposableEffect(Unit) {
+        DominanceWebSocketManager.connect(AppStore.SERVER_IP)
+
+        onDispose {
+            DominanceWebSocketManager.close()
+        }
+    }
+
     val context = LocalContext.current
     val mapBitmap = remember {
         context.assets.open("floorplan.png").use { BitmapFactory.decodeStream(it) }
@@ -141,16 +148,9 @@ fun FloorplanScreen(modifier: Modifier = Modifier)
                             .offset { IntOffset(x.toInt() - 20, y.toInt() - 20) }
                             .size(10.dp)
                             .background(markerColor.copy(alpha = 0.8f), CircleShape)
-                            .border(2.dp, Color.White, CircleShape),
+                            .border(2.dp, markerColor.copy(), CircleShape),
                         contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = marker.posterId,
-                            color = Color.White,
-                            fontSize = 8.sp,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    ) { }
                 }
             }
         }
@@ -168,12 +168,49 @@ fun FloorplanScreen(modifier: Modifier = Modifier)
             Text(
                 text = marker.posterId,
                 color = Color.Black,
-                fontSize = 18.sp,
+                fontSize = 12.sp,
                 modifier = Modifier
                     .offset { IntOffset(x.toInt() - 20, y.toInt() + 24) }
-                    .padding(4.dp)
-                    .background(Color.White)
+                    .padding(2.dp)
+                    .background(Color.White.copy(alpha = 0.8f))
             )
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .background(Color.LightGray)
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(modifier = Modifier.size(10.dp).background(Color.White.copy(alpha = 0.8f), CircleShape))
+                Text("Not Claimed", color = Color.Black, fontSize = 11.sp)
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(modifier = Modifier.size(10.dp).background(Color(0xFFE53935), CircleShape))
+                Text("Team Red", color = Color.Black, fontSize = 11.sp)
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(modifier = Modifier.size(10.dp).background(Color(0xFF43A047), CircleShape))
+                Text("Team Green", color = Color.Black, fontSize = 11.sp)
+            }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Box(modifier = Modifier.size(10.dp).background(Color(0xFF1E88E5), CircleShape))
+                Text("Team Blue", color = Color.Black, fontSize = 11.sp)
+            }
         }
     }
 }

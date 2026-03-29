@@ -13,7 +13,15 @@ fun buildImageDatabase(session: Session, assets: AssetManager): AugmentedImageDa
     val db = AugmentedImageDatabase(session)
     val posters = listOf(
         "afis1.png" to 0.21f,
-        "afis2.png" to 0.21f
+        "afis2.png" to 0.21f,
+        "afis3.png" to 0.21f,
+        "afis4.png" to 0.21f,
+        "afis5.png" to 0.21f,
+        "afis6.png" to 0.21f,
+        "afis7.png" to 0.21f,
+        "afis8.png" to 0.21f,
+        "afis9.png" to 0.21f,
+        "afis10.png" to 0.21f
     )
 
     posters.forEach { (name, width) ->
