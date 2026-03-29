@@ -370,7 +370,8 @@ class PosterDetailActivity : ComponentActivity()
                     onColorSelected = { selectedColor = it; isEraser = false },
                     onStrokeWidthChanged = { strokeWidth = it },
                     onEraserToggled = { isEraser = !isEraser },
-                    onClearAll = { paths = emptyList() }
+                    onClearAll = { paths = emptyList() },
+                    onPopupSticker = { showStickerDialog = true }
                 )
             }
             // Toolbar
