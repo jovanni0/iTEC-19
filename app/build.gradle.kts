@@ -13,6 +13,13 @@ plugins {
     kotlin("plugin.serialization") version "2.0.0"
 }
 
+val mapsApiKey = project.findProperty("MAPS_API_KEY")?.toString() ?: ""
+
+android {
+    defaultConfig {
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
+    }
+}
 android {
     namespace = "dev.jovanni0.itec19"
     compileSdk {
@@ -82,4 +89,10 @@ dependencies {
     implementation("io.ktor:ktor-client-okhttp:2.3.0")
     implementation("io.ktor:ktor-client-websockets:2.3.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.maps.android:maps-compose:4.4.1")
+    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("io.github.sceneview:arsceneview:2.2.1")
 }

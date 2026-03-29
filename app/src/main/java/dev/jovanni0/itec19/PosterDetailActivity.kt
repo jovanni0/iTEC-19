@@ -89,6 +89,7 @@ class PosterDetailActivity : ComponentActivity()
         super.onCreate(savedInstanceState)
 
         val posterName = intent.getStringExtra("poster_name") ?: "Unknown"
+        val readOnly = intent.getBooleanExtra("read_only", false)
         val posterBitmap = applicationContext.assets.open("$posterName.png").use {
             BitmapFactory.decodeStream(it)
         }
@@ -99,7 +100,8 @@ class PosterDetailActivity : ComponentActivity()
             PosterDetailScreen(
                 posterName = posterName,
                 posterBitmap = posterBitmap,
-                onBack = { finish() }
+                onBack = { finish() },
+                readOnly = readOnly
             )
         }
     }
@@ -128,7 +130,8 @@ class PosterDetailActivity : ComponentActivity()
     fun PosterDetailScreen(
         posterName: String,
         posterBitmap: Bitmap,
-        onBack: () -> Unit
+        onBack: () -> Unit,
+        readOnly: Boolean = false
     ) {
         var paths = DrawingStore.drawings[posterName] ?: emptyList()
         var currentPath by remember { mutableStateOf<Path?>(null) }
@@ -359,6 +362,17 @@ class PosterDetailActivity : ComponentActivity()
                 }
             }
 
+            if (!readOnly) {
+                DrawingToolbar(
+                    selectedColor = selectedColor,
+                    strokeWidth = strokeWidth,
+                    isEraser = isEraser,
+                    onColorSelected = { selectedColor = it; isEraser = false },
+                    onStrokeWidthChanged = { strokeWidth = it },
+                    onEraserToggled = { isEraser = !isEraser },
+                    onClearAll = { paths = emptyList() }
+                )
+            }
             // Toolbar
             DrawingToolbar(
                 selectedColor = selectedColor,

@@ -1,5 +1,7 @@
 package dev.jovanni0.itec19
 
+
+import androidx.compose.runtime.remember
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -23,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,6 +35,7 @@ import dev.jovanni0.itec19.screen.FloorplanScreen
 import dev.jovanni0.itec19.screen.MapScreen
 import dev.jovanni0.itec19.screen.TeamPeakScreen
 import dev.jovanni0.itec19.stores.AppStore
+
 
 class MainActivity : ComponentActivity() {
     private var canShowAR by mutableStateOf(false)
@@ -135,5 +137,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
     }
+    
 }
