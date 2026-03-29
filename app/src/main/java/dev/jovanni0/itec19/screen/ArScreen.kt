@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.res.AssetManager
 import android.graphics.BitmapFactory
 import android.opengl.Matrix
+import android.util.Base64
 import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -15,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,10 +27,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.google.ar.core.AugmentedImage
@@ -44,6 +49,7 @@ import dev.jovanni0.itec19.audio.TeamAudioPlayer
 import dev.jovanni0.itec19.server_connection.WebSocketManager
 import dev.jovanni0.itec19.stores.AppStore
 import dev.jovanni0.itec19.stores.DrawingStore
+import dev.jovanni0.itec19.stores.StickerStore
 import io.github.sceneview.ar.ARScene
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -59,6 +65,7 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     val context = LocalContext.current
 
+
     // server connection
     var connectedPosterId by remember { mutableStateOf<String?>(null) }
     var disconnectJob by remember { mutableStateOf<Job?>(null) }
@@ -67,6 +74,24 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
     DisposableEffect(isActive) {
         onDispose { TeamAudioPlayer.stop() }
     }
+
+
+    // haptic feedback
+    val haptic = LocalHapticFeedback.current
+    val currentDrawings = DrawingStore.drawings[trackedImage?.name]
+
+    LaunchedEffect(currentDrawings?.size) {
+        val lastStroke = currentDrawings?.lastOrNull() ?: return@LaunchedEffect
+        val isOtherTeam = lastStroke.second.deviceId != AppStore.deviceId
+
+        if (isOtherTeam) {
+//            repeat(3) {
+//                delay(100)
+//            }
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+    }
+
 
     fun configureSession(session: Session) {
         val config = Config(session).apply {
@@ -180,7 +205,20 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
 
         Box(modifier = Modifier.fillMaxSize().onSizeChanged { canvasSize = it })
 
-        if (cornerPoints.size == 4) {
+        if (cornerPoints.size == 4)
+        {
+            /**
+             * stickers
+             */
+            val posterStickers = StickerStore.stickers[trackedImage?.name]
+            val decodedStickers = posterStickers?.map { sticker ->
+                sticker to remember(sticker.id) {
+                    val bytes = android.util.Base64.decode(sticker.data, android.util.Base64.NO_WRAP)
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                }
+            }
+
+
             Canvas(
                 modifier = Modifier
                     .fillMaxSize()
@@ -223,11 +261,12 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
                     Log.d("AR_DRAW", "Poster: $posterName, Drawings: ${posterDrawings?.size}")
                     Log.d("AR_DRAW", "Corner points: $cornerPoints")
 
-                    if (!posterDrawings.isNullOrEmpty()) {
-                        val quadOrigin = cornerPoints[0]
-                        val quadRight = cornerPoints[1] - cornerPoints[0]
-                        val quadDown = cornerPoints[3] - cornerPoints[0]
+                    val quadOrigin = cornerPoints[0]
+                    val quadRight = cornerPoints[1] - cornerPoints[0]
+                    val quadDown = cornerPoints[3] - cornerPoints[0]
 
+                    if (!posterDrawings.isNullOrEmpty())
+                    {
                         Log.d("AR_DRAW", "quadOrigin=$quadOrigin, quadRight=$quadRight, quadDown=$quadDown")
 
                         posterDrawings.forEach { (points, config) ->
@@ -236,6 +275,25 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
                                 path = mappedPath,
                                 color = config.color,
                                 style = Stroke(width = config.strokeWidth)
+                            )
+                        }
+                    }
+
+                    decodedStickers?.forEach { (sticker, bmp) ->
+                        bmp?.let {
+                            val mapped = quadOrigin + quadRight * sticker.position.x + quadDown * sticker.position.y
+                            val stickerSize = quadRight.getDistance() * 0.2f
+
+                            drawImage(
+                                image = it.asImageBitmap(),
+                                dstOffset = androidx.compose.ui.unit.IntOffset(
+                                    (mapped.x - stickerSize / 2).toInt(),
+                                    (mapped.y - stickerSize / 2).toInt()
+                                ),
+                                dstSize = androidx.compose.ui.unit.IntSize(
+                                    stickerSize.toInt(),
+                                    stickerSize.toInt()
+                                )
                             )
                         }
                     }

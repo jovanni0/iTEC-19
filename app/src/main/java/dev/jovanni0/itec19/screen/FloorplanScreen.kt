@@ -40,16 +40,26 @@ import dev.jovanni0.itec19.stores.DrawingStore
 
 
 val posterMarkers = listOf(
-    PosterMarker("afis1", 0.31f, 0.72f),
-    PosterMarker("afis2", 0.83f, 0.9f),
-    PosterMarker("afis3", 0.58f, 0.97f),
-    PosterMarker("afis4", 0.55f, 0.8f),
-    PosterMarker("afis5", 0.32f, 0.75f),
+//    PosterMarker("afis1", 0.31f, 0.72f),
+//    PosterMarker("afis2", 0.83f, 0.9f),
+//    PosterMarker("afis3", 0.58f, 0.97f),
+//    PosterMarker("afis4", 0.55f, 0.8f),
+//    PosterMarker("afis5", 0.32f, 0.75f),
 //    PosterMarker("afis6", 0.1f, 0.5f),
 //    PosterMarker("afis7", 0.8f, 0.7f),
 //    PosterMarker("afis8", 0.4f, 0.1f),
 //    PosterMarker("afis9", 0.9f, 0.3f),
 //    PosterMarker("afis10", 0.5f, 0.9f),
+    PosterMarker("afis1",  0.31f, 0.58f),
+    PosterMarker("afis2",  0.82f, 0.67f),
+    PosterMarker("afis3",  0.60f, 0.70f),
+    PosterMarker("afis4",  0.56f, 0.62f),
+    PosterMarker("afis5",  0.31f, 0.62f),
+    PosterMarker("afis6",  0.72f, 0.62f),
+    PosterMarker("afis7",  0.15f, 0.49f),
+    PosterMarker("afis8",  0.82f, 0.59f),
+    PosterMarker("afis9",  0.66f, 0.62f),
+    PosterMarker("afis10", 0.60f, 0.64f),
 )
 
 
