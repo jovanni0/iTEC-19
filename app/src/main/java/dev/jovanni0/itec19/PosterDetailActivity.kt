@@ -54,7 +54,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
 import dev.jovanni0.itec19.data.Team
 import dev.jovanni0.itec19.server_connection.WebSocketManager
 import dev.jovanni0.itec19.stores.AppStore
@@ -69,6 +68,7 @@ class PosterDetailActivity : ComponentActivity()
         super.onCreate(savedInstanceState)
 
         val posterName = intent.getStringExtra("poster_name") ?: "Unknown"
+        val readOnly = intent.getBooleanExtra("read_only", false)
         val posterBitmap = applicationContext.assets.open("$posterName.png").use {
             BitmapFactory.decodeStream(it)
         }
@@ -79,7 +79,8 @@ class PosterDetailActivity : ComponentActivity()
             PosterDetailScreen(
                 posterName = posterName,
                 posterBitmap = posterBitmap,
-                onBack = { finish() }
+                onBack = { finish() },
+                readOnly = readOnly
             )
         }
     }
@@ -108,7 +109,8 @@ class PosterDetailActivity : ComponentActivity()
     fun PosterDetailScreen(
         posterName: String,
         posterBitmap: Bitmap,
-        onBack: () -> Unit
+        onBack: () -> Unit,
+        readOnly: Boolean = false
     ) {
         var paths = DrawingStore.drawings[posterName] ?: emptyList()
         var currentPath by remember { mutableStateOf<Path?>(null) }
@@ -233,16 +235,17 @@ class PosterDetailActivity : ComponentActivity()
                 }
             }
 
-            // Toolbar
-            DrawingToolbar(
-                selectedColor = selectedColor,
-                strokeWidth = strokeWidth,
-                isEraser = isEraser,
-                onColorSelected = { selectedColor = it; isEraser = false },
-                onStrokeWidthChanged = { strokeWidth = it },
-                onEraserToggled = { isEraser = !isEraser },
-                onClearAll = { paths = emptyList() }
-            )
+            if (!readOnly) {
+                DrawingToolbar(
+                    selectedColor = selectedColor,
+                    strokeWidth = strokeWidth,
+                    isEraser = isEraser,
+                    onColorSelected = { selectedColor = it; isEraser = false },
+                    onStrokeWidthChanged = { strokeWidth = it },
+                    onEraserToggled = { isEraser = !isEraser },
+                    onClearAll = { paths = emptyList() }
+                )
+            }
         }
     }
 
