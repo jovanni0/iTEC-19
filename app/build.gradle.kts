@@ -16,9 +16,7 @@ plugins {
 val mapsApiKey = project.findProperty("MAPS_API_KEY")?.toString() ?: ""
 
 android {
-    defaultConfig {
-        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
-    }
+
 }
 android {
     namespace = "dev.jovanni0.itec19"
@@ -36,11 +34,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
 
         buildConfigField(
             "String",
             "STABILITY_API_KEY",
             "\"${localProperties.getProperty("stability.api.key", "")}\""
+        )
+        buildConfigField(
+            "String",
+            "SERVER_IP_ADDRESS",
+            "\"${localProperties.getProperty("server.ip.adress", "")}\""
         )
     }
 

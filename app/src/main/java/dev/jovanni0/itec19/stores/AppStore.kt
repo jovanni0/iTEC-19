@@ -7,10 +7,14 @@ import androidx.compose.runtime.setValue
 import java.util.UUID
 import androidx.core.content.edit
 import dev.jovanni0.itec19.data.Team
+import dev.jovanni0.itec19.BuildConfig
 
 object AppStore
 {
-    const val SERVER_IP = "10.209.127.241"
+    const val SERVER_IP = BuildConfig.SERVER_IP_ADDRESS
+
+    var serverReachable by mutableStateOf<Boolean?>(null) // null = checking
+
     var team by mutableStateOf<Team?>(null)
     lateinit var deviceId: String
         private set

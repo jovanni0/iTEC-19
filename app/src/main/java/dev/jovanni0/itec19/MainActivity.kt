@@ -11,30 +11,40 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import dev.jovanni0.itec19.screen.ArScreen
 import dev.jovanni0.itec19.screen.FloorplanScreen
 import dev.jovanni0.itec19.screen.MapScreen
 import dev.jovanni0.itec19.screen.TeamPeakScreen
 import dev.jovanni0.itec19.stores.AppStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 
 class MainActivity : ComponentActivity() {
@@ -43,7 +53,15 @@ class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        canShowAR = isGranted
+        if (isGranted) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                // small delay to let the permission system settle
+                delay(100)
+                withContext(Dispatchers.Main) {
+                    canShowAR = true
+                }
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?)
@@ -60,6 +78,22 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var selectedTab by remember { mutableIntStateOf(0) }
+
+            LaunchedEffect(Unit) {
+                while (true) {
+                    AppStore.serverReachable = withContext(Dispatchers.IO) {
+                        try {
+                            val socket = java.net.Socket()
+                            socket.connect(java.net.InetSocketAddress(AppStore.SERVER_IP, 8080), 2000)
+                            socket.close()
+                            true
+                        } catch (e: Exception) {
+                            false
+                        }
+                    }
+                    delay(5000) // recheck every 5 seconds
+                }
+            }
 
             Scaffold(
                 bottomBar = {
@@ -87,8 +121,8 @@ class MainActivity : ComponentActivity() {
                             NavigationBarItem(
                                 selected = selectedTab == 3,
                                 onClick = { selectedTab = 3 },
-                                icon = { Icon(Icons.Default.Person, contentDescription = "Floorplan") },
-                                label = { Text("Floorplan") }
+                                icon = { Icon(Icons.Default.List, contentDescription = "Floor Plan") },
+                                label = { Text("Floor Plan") }
                             )
                         }
                     }
@@ -134,10 +168,40 @@ class MainActivity : ComponentActivity() {
                                 .background(Color.White)
                         )
                     }
+
+                    when (AppStore.serverReachable) {
+                        false -> Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.Red.copy(alpha = 0.8f))
+                                .padding(8.dp)
+                                .align(Alignment.TopCenter),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Server unreachable",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        null -> Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.Gray.copy(alpha = 0.8f))
+                                .padding(8.dp)
+                                .align(Alignment.TopCenter),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Connecting to server...", color = Color.White)
+                        }
+
+                        true -> {}
+                    }
                 }
             }
         }
 
     }
-    
+
 }

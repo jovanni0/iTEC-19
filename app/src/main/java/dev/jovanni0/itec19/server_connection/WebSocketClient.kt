@@ -52,13 +52,9 @@ class WebSocketClient(
 
     val isConnected: Boolean
         get() = session != null
-
     suspend fun connect()
     {
-//        var disconnectedCleanly = false
-
         try {
-//            client.webSocket("ws://$serverIp:8080/draw/$posterId") {
             client.webSocket("ws://$serverIp:8080/draw/$posterId?lastStrokeId=$lastStrokeId") {
                 session = this
 
@@ -70,7 +66,6 @@ class WebSocketClient(
                     val drawEvent = jsonSerializer.decodeFromString<DrawEvent>(text)
                     handleDrawEvent(drawEvent)
                 }
-//                disconnectedCleanly = true
             }
         }
         catch (e: Exception)
