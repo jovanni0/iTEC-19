@@ -1,9 +1,11 @@
-package dev.jovanni0.itec19
+package dev.jovanni0.itec19.utils
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import dev.jovanni0.itec19.DrawConfig
+import dev.jovanni0.itec19.StrokePayload
 
 
 fun Offset.normalize(canvasSize: Size): Offset

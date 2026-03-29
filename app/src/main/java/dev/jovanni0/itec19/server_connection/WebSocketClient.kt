@@ -11,8 +11,7 @@ import dev.jovanni0.itec19.StrokeAddedEvent
 import dev.jovanni0.itec19.StrokePayload
 import dev.jovanni0.itec19.UndoEvent
 import dev.jovanni0.itec19.data.Team
-import dev.jovanni0.itec19.stores.AppStore.team
-import dev.jovanni0.itec19.toLocalStroke
+import dev.jovanni0.itec19.utils.toLocalStroke
 import io.ktor.websocket.Frame
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp

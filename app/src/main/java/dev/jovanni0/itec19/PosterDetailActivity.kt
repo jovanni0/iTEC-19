@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Path
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,25 +21,33 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,14 +60,25 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.lifecycleScope
+import androidx.compose.ui.unit.sp
+import dev.jovanni0.itec19.data.Sticker
 import dev.jovanni0.itec19.data.Team
 import dev.jovanni0.itec19.server_connection.WebSocketManager
 import dev.jovanni0.itec19.stores.AppStore
 import dev.jovanni0.itec19.stores.DrawingStore
+import dev.jovanni0.itec19.stores.StickerStore
+import dev.jovanni0.itec19.utils.StabilityApi
+import dev.jovanni0.itec19.utils.denormalize
+import dev.jovanni0.itec19.utils.normalize
+import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 import java.util.UUID
 
 
@@ -118,6 +138,18 @@ class PosterDetailActivity : ComponentActivity()
         var isEraser by remember { mutableStateOf(false) }
         val bitmap = remember(posterName) { posterBitmap }
         var canvasSize by remember { mutableStateOf(Size.Zero) }
+        val haptic = LocalHapticFeedback.current
+
+        /**
+         * sticker stuff
+         */
+        val stickers = StickerStore.stickers[posterName] ?: emptyList()
+        var showStickerDialog by remember { mutableStateOf(false) }
+        var stickerPromptInput by remember { mutableStateOf("") }
+        var pendingSticker by remember { mutableStateOf<String?>(null) }
+        var isLoadingSticker by remember { mutableStateOf(false) }
+        var placingSticker by remember { mutableStateOf(false) }
+        val coroutineScope = rememberCoroutineScope()
 
         Column(
             modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -180,6 +212,7 @@ class PosterDetailActivity : ComponentActivity()
                                     rawPoints = listOf(offset)
                                 },
                                 onDrag = { change, _ ->
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     currentPath = currentPath?.apply { lineTo(change.position.x, change.position.y) }
                                     rawPoints = rawPoints + change.position
                                 },
@@ -231,6 +264,99 @@ class PosterDetailActivity : ComponentActivity()
                         )
                     }
                 }
+
+                /**
+                 * layer 3: stickers
+                 */
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (placingSticker && pendingSticker != null) {
+                                Modifier.pointerInput(Unit) {
+                                    detectTapGestures { tap ->
+                                        val nx = (tap.x / canvasSize.width).coerceIn(0f, 1f)
+                                        val ny = (tap.y / canvasSize.height).coerceIn(0f, 1f)
+
+                                        val sticker = Sticker(
+                                            id = UUID.randomUUID().toString(),
+                                            data = pendingSticker!!,  // base64 string
+                                            position = Offset(nx, ny)
+                                        )
+
+                                        StickerStore.stickers[posterName] = (StickerStore.stickers[posterName] ?: emptyList()) + sticker
+
+//                                        WebSocketManager.sendSticker(sticker, posterName)
+
+                                        pendingSticker = null
+                                        placingSticker = false
+                                    }
+                                }
+                            } else Modifier
+                        )
+                ) {
+                    stickers.forEach { sticker ->
+                        val stickerSizeDp = 80.dp
+                        val bmp = remember(sticker.id) {
+                            val bytes = Base64.decode(sticker.data, Base64.NO_WRAP)
+                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                        }
+
+                        bmp?.let {
+                            Image(
+                                bitmap = it.asImageBitmap(),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .wrapContentSize(Alignment.TopStart)
+                                    .offset(
+                                        x = with(LocalDensity.current) {
+                                            (sticker.position.x * canvasSize.width).toDp() - stickerSizeDp / 2
+                                        },
+                                        y = with(LocalDensity.current) {
+                                            (sticker.position.y * canvasSize.height).toDp() - stickerSizeDp / 2
+                                        }
+                                    )
+                                    .size(stickerSizeDp)
+                            )
+                        }
+                    }
+
+                    if (placingSticker) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.4f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                pendingSticker?.let { base64 ->
+                                    val bmp = remember(base64) {
+                                        val bytes = Base64.decode(base64, Base64.NO_WRAP)
+                                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                                    }
+                                    bmp?.let {
+                                        Image(
+                                            bitmap = it.asImageBitmap(),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(100.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    "Tap anywhere to place your sticker",
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 12.dp)
+                                )
+                                TextButton(onClick = { placingSticker = false; pendingSticker = null }) {
+                                    Text("Cancel", color = Color.White.copy(alpha = 0.7f))
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // Toolbar
@@ -241,7 +367,75 @@ class PosterDetailActivity : ComponentActivity()
                 onColorSelected = { selectedColor = it; isEraser = false },
                 onStrokeWidthChanged = { strokeWidth = it },
                 onEraserToggled = { isEraser = !isEraser },
-                onClearAll = { paths = emptyList() }
+                onClearAll = { paths = emptyList() },
+                onPopupSticker = { showStickerDialog = true }
+            )
+        }
+
+        if (showStickerDialog)
+        {
+            AlertDialog(
+                onDismissRequest = { if (!isLoadingSticker) showStickerDialog = false },
+                title = { Text("Add a Sticker") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Describe the sticker you want", fontSize = 13.sp, color = Color.Gray)
+                        OutlinedTextField(
+                            value = stickerPromptInput,
+                            onValueChange = { stickerPromptInput = it },
+                            label = { Text("e.g. happy sun, cool rocket...") },
+                            singleLine = true,
+                            enabled = !isLoadingSticker
+                        )
+                        if (isLoadingSticker) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Text("Generating your sticker...", fontSize = 12.sp, color = Color.Gray)
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (stickerPromptInput.isNotBlank() && !isLoadingSticker)
+                            {
+                                isLoadingSticker = true
+                                coroutineScope.launch {
+                                    val generatedBitmap = StabilityApi.generateSticker(stickerPromptInput)
+                                    isLoadingSticker = false
+
+                                    if (generatedBitmap != null)
+                                    {
+                                        val stream = ByteArrayOutputStream()
+                                        generatedBitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+                                        pendingSticker = Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
+                                        placingSticker = true
+                                        showStickerDialog = false
+                                        stickerPromptInput = ""
+                                    }
+                                    else
+                                    {
+                                        Log.d("State", "Error generating sticker")
+                                    }
+                                }
+                            }
+                        },
+                        enabled = stickerPromptInput.isNotBlank() && !isLoadingSticker
+                    ) { Text("Generate") }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = { showStickerDialog = false; stickerPromptInput = "" },
+                        enabled = !isLoadingSticker
+                    ) { Text("Cancel") }
+                }
             )
         }
     }
@@ -254,7 +448,8 @@ class PosterDetailActivity : ComponentActivity()
         onColorSelected: (Color) -> Unit,
         onStrokeWidthChanged: (Float) -> Unit,
         onEraserToggled: () -> Unit,
-        onClearAll: () -> Unit
+        onClearAll: () -> Unit,
+        onPopupSticker: () -> Unit
     ) {
         val colors = listOf(Color.Red, Color.Blue, Color.Green, Color.Black, Color.Yellow, Color.Magenta)
 
@@ -289,6 +484,10 @@ class PosterDetailActivity : ComponentActivity()
                 // Clear all
                 IconButton(onClick = onClearAll) {
                     Icon(Icons.Default.Delete, contentDescription = "Clear", tint = Color.Red)
+                }
+
+                IconButton(onClick = onPopupSticker) {
+                    Icon(Icons.Default.Star, contentDescription = "AI Stickers", tint = Color.Cyan)
                 }
             }
 
