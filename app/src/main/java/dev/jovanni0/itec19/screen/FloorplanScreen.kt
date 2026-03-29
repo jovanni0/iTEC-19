@@ -1,9 +1,11 @@
 package dev.jovanni0.itec19.screen
 
+import android.content.Intent
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -148,7 +150,13 @@ fun FloorplanScreen(modifier: Modifier = Modifier)
                             .offset { IntOffset(x.toInt() - 20, y.toInt() - 20) }
                             .size(10.dp)
                             .background(markerColor.copy(alpha = 0.8f), CircleShape)
-                            .border(2.dp, markerColor.copy(), CircleShape),
+                            .border(2.dp, markerColor.copy(), CircleShape)
+                            .clickable {
+                                val intent = Intent(context, ReadOnlyPosterScreen::class.java).apply {
+                                    putExtra("poster_name", marker.posterId)
+                                }
+                                context.startActivity(intent)
+                            },
                         contentAlignment = Alignment.Center
                     ) { }
                 }

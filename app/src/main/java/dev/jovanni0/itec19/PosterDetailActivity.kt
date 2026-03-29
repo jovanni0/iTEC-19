@@ -362,18 +362,18 @@ class PosterDetailActivity : ComponentActivity()
                 }
             }
 
-            if (!readOnly) {
-                DrawingToolbar(
-                    selectedColor = selectedColor,
-                    strokeWidth = strokeWidth,
-                    isEraser = isEraser,
-                    onColorSelected = { selectedColor = it; isEraser = false },
-                    onStrokeWidthChanged = { strokeWidth = it },
-                    onEraserToggled = { isEraser = !isEraser },
-                    onClearAll = { paths = emptyList() },
-                    onPopupSticker = { showStickerDialog = true }
-                )
-            }
+//            if (!readOnly) {
+//                DrawingToolbar(
+//                    selectedColor = selectedColor,
+//                    strokeWidth = strokeWidth,
+//                    isEraser = isEraser,
+//                    onColorSelected = { selectedColor = it; isEraser = false },
+//                    onStrokeWidthChanged = { strokeWidth = it },
+//                    onEraserToggled = { isEraser = !isEraser },
+//                    onClearAll = { paths = emptyList() },
+//                    onPopupSticker = { showStickerDialog = true }
+//                )
+//            }
             // Toolbar
             DrawingToolbar(
                 selectedColor = selectedColor,

@@ -8,10 +8,16 @@ import android.opengl.Matrix
 import android.util.Base64
 import android.util.Log
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,6 +56,7 @@ import dev.jovanni0.itec19.server_connection.WebSocketManager
 import dev.jovanni0.itec19.stores.AppStore
 import dev.jovanni0.itec19.stores.DrawingStore
 import dev.jovanni0.itec19.stores.StickerStore
+import dev.jovanni0.itec19.utils.toggleFlashlight
 import io.github.sceneview.ar.ARScene
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -85,12 +92,19 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
         val isOtherTeam = lastStroke.second.deviceId != AppStore.deviceId
 
         if (isOtherTeam) {
-//            repeat(3) {
-//                delay(100)
-//            }
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            repeat(3) {
+                delay(100)
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            }
         }
     }
+
+
+    /**
+     * flashlight
+     */
+    var flashlightOn by remember { mutableStateOf(false) }
+    var arSession by remember { mutableStateOf<Session?>(null) }
 
 
     fun configureSession(session: Session) {
@@ -309,5 +323,22 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
                 .padding(40.dp),
             style = MaterialTheme.typography.headlineSmall,
         )
+
+        IconButton(
+            onClick = {
+                flashlightOn = !flashlightOn
+                toggleFlashlight(context, arSession, flashlightOn)
+            },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .background(Color.Black.copy(alpha = 0.4f), CircleShape)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Star,
+                contentDescription = "Toggle flashlight",
+                tint = if (flashlightOn) Color.Yellow else Color.White
+            )
+        }
     }
 }
