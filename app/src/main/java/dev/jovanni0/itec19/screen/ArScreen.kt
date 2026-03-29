@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +40,7 @@ import dev.jovanni0.itec19.PosterDetailActivity
 import dev.jovanni0.itec19.ar.buildImageDatabase
 import dev.jovanni0.itec19.ar.isPointInQuad
 import dev.jovanni0.itec19.ar.mapNormalizedStrokeToQuad
+import dev.jovanni0.itec19.audio.TeamAudioPlayer
 import dev.jovanni0.itec19.server_connection.WebSocketManager
 import dev.jovanni0.itec19.stores.AppStore
 import dev.jovanni0.itec19.stores.DrawingStore
@@ -61,6 +63,10 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
     var connectedPosterId by remember { mutableStateOf<String?>(null) }
     var disconnectJob by remember { mutableStateOf<Job?>(null) }
     val scope = rememberCoroutineScope()
+
+    DisposableEffect(isActive) {
+        onDispose { TeamAudioPlayer.stop() }
+    }
 
     fun configureSession(session: Session) {
         val config = Config(session).apply {
@@ -105,6 +111,13 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
 
                     statusMessage = "Found ${visiblePoster.name}"
 
+                    val dominantTeam = DrawingStore.dominance[visiblePoster.name]
+                    if (dominantTeam != null && dominantTeam != AppStore.team) {
+                        TeamAudioPlayer.play(context, dominantTeam)
+                    } else {
+                        TeamAudioPlayer.stop()
+                    }
+
                     try {
                         val camera = frame.camera
                         val projectionMatrix = FloatArray(16)
@@ -147,6 +160,8 @@ fun ArScreen(assets: AssetManager, modifier: Modifier = Modifier, isActive: Bool
                 } else {
                     statusMessage = "Looking for poster..."
                     cornerPoints = emptyList()
+
+                    TeamAudioPlayer.stop()
 
                     if (disconnectJob == null && connectedPosterId != null)
                     {
